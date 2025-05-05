@@ -1,103 +1,211 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [question, setQuestion] = useState('');
+  const [messages, setMessages] = useState<{ sender: 'user' | 'assistant'; text: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showNewMessagesBadge, setShowNewMessagesBadge] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [lastMessageIndex, setLastMessageIndex] = useState(-1);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const predefinedQuestions = [
+    "What is a MongoDB replica set?",
+    "How does indexing work in MongoDB?",
+    "What is sharding in MongoDB?",
+    "What are MongoDB transactions?"
+  ];
+
+  const askQuestion = async (q: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://10.0.0.136:8000/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      });
+      const data = await res.json();
+      setMessages(prev => [
+        ...prev,
+        { sender: 'user', text: q },
+        { sender: 'assistant', text: data.answer || 'No answer returned.' }
+      ]);
+    } catch (err) {
+      setMessages(prev => [
+        ...prev,
+        { sender: 'user', text: q },
+        { sender: 'assistant', text: 'Error fetching response.' }
+      ]);
+    } finally {
+      setLoading(false);
+      setQuestion('');
+    }
+  };
+
+  const scrollToBottom = useCallback(() => {
+    if (bottomRef.current) {
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    const scrollContainer = messagesContainerRef.current;
+    if (!scrollContainer) return;
+
+    const threshold = 100;
+    const isNearBottom =
+      scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < threshold;
+
+    if (isNearBottom) {
+      scrollToBottom();
+    } else {
+      setShowNewMessagesBadge(true);
+    }
+  }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    const scrollContainer = messagesContainerRef.current;
+    if (!scrollContainer) return;
+
+    const threshold = 100;
+
+    const handleScroll = () => {
+      const isNearBottom =
+        scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < threshold;
+      setShowNewMessagesBadge(!isNearBottom);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+
+    // Initial scroll to bottom
+    scrollToBottom();
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [scrollToBottom]);
+
+  useEffect(() => {
+    setLastMessageIndex(messages.length - 1);
+  }, [messages.length]);
+
+  return (
+    <main className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
+      <div className="flex flex-1 min-h-0 w-full max-w-4xl mx-auto shadow-xl rounded-2xl overflow-hidden bg-white/80 backdrop-blur-lg">
+        {/* Chat column */}
+        <div className="w-full flex flex-col flex-1 min-h-0 p-6">
+          <h1 className="flex items-center text-3xl font-semibold mb-6 border-b pb-4">
+            <img
+              src="/MongoMentor.png"
+              alt="Logo"
+              className="w-14 h-14 mr-5 object-contain"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            MongoMentor
+          </h1>
+
+          {/* Welcome robot if no messages */}
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center flex-1 space-y-4 mb-6">
+              <img
+                src="/mongodb-robot.png"
+                alt="MongoDB Robot"
+                className="w-32 h-auto opacity-85"
+              />
+              <p className="text-center text-gray-600 text-lg font-medium">
+                Start the conversation by asking me a question.
+              </p>
+            </div>
+          )}
+
+          {/* Scrollable chat messages if available */}
+          {messages.length > 0 && (
+            <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto space-y-4 mb-6 flex flex-col">
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`max-w-[75%] px-5 py-3 rounded-2xl break-words shadow-md transition-opacity duration-500 ${
+                    msg.sender === 'user'
+                      ? 'bg-[#13AA52] text-white self-end'
+                      : 'bg-gray-100 text-gray-800 self-start'
+                  } ${i === lastMessageIndex ? 'opacity-0 animate-fadein' : 'opacity-100'}`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+             <div ref={bottomRef} />
+             {showNewMessagesBadge && (
+               <button
+                 onClick={() => {
+                   bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                   setShowNewMessagesBadge(false);
+                 }}
+                 className="fixed bottom-24 right-8 bg-[#13AA52] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#0e8c42] transition-all"
+               >
+                 New Messages ↓
+               </button>
+             )}
+          </div>
+          )}
+
+          {/* Footer */}
+          <footer className="space-y-6">
+            {/* Predefined questions */}
+            <div>
+              <h2 className="font-semibold mb-2">Try Asking:</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {predefinedQuestions.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => askQuestion(q)}
+                    className="text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* User input */}
+            <div className="space-y-2 mt-6">
+              <textarea
+                className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400"
+                rows={3}
+                placeholder="Ask anything about MongoDB..."
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    askQuestion(question);
+                  }
+                }}
+              />
+              <button
+              onClick={() => {
+                  const currentQuestion = question.trim();
+                  if (currentQuestion) {
+                    setTimeout(() => askQuestion(currentQuestion), 50);
+                  }
+                }}
+                className="px-6 py-3 bg-[#13AA52] hover:bg-[#0e8c42] text-white font-medium rounded-full shadow-md transition-transform transform hover:scale-105 disabled:opacity-50"
+                disabled={!question || loading}
+              >
+                {loading ? 'Loading...' : 'Ask'}
+              </button>
+            </div>
+          </footer>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+    </main>
   );
 }
