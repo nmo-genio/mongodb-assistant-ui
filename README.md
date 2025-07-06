@@ -27,6 +27,13 @@ backend runs elsewhere, update the endpoint in
 
 ## Deployment
 
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Backend Code
+
+The backend repository for this project is available at [nmo-genio/rag_architecture](https://github.com/nmo-genio/rag_architecture).
+=======
 This app can be deployed like any Next.js project. Refer to the
 [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying)
 for options and best practices.
+
