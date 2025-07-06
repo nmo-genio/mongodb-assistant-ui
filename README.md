@@ -1,5 +1,7 @@
 # MongoMentor UI
 
+![MongoMentor UI](assets/images/mongoMentor.png)
+
 MongoMentor is a simple chat-based interface for asking questions about MongoDB.
 It is built with [Next.js](https://nextjs.org/) and Tailwind CSS.
 The UI communicates with a backend service that returns answers to your questions.
@@ -31,9 +33,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Backend Code
 
-The backend repository for this project is available at [nmo-genio/rag_architecture](https://github.com/nmo-genio/rag_architecture).
-=======
+# The backend repository for this project is available at [nmo-genio/rag_architecture](https://github.com/nmo-genio/rag_architecture).
+
 This app can be deployed like any Next.js project. Refer to the
 [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying)
 for options and best practices.
-
